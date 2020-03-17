@@ -1,0 +1,69 @@
+---
+title: "Doctoctoc_public"
+author: "Kevin Ouazzani"
+date: "17 mars 2020"
+output: html_document
+---
+
+# load packages
+
+```{r}
+library(dplyr)
+library(rtweet)
+library(elastic)
+```
+
+# Elastic
+
+## Connect to db
+
+```{r}
+host <- '192.168.99.100'
+port <- 9200
+transport_schema = 'http'
+
+x <- connect(host = host,
+             port = port,
+             transport_schema = transport_schema)
+```
+
+## Import data
+
+```{r}
+load(file='alltweetsunique.RData')
+```
+
+
+## Create db and fill
+
+```{r}
+#create db 
+index_create(x,"tweets")
+
+#fill
+for (i in 1:nrow(alltweets)){
+  cat('------------')
+  cat('\nImport ', i)
+  tweet<-alltweets[i,]
+  cat('\nPopulating database with tweet : ',tweet$status_id[1])
+  docs_create(conn=x,
+              index='tweets',
+              id=i,
+              body=list(id=tweet$status_id[1],
+                        text=tweet$text[1],
+                        userid=tweet$user_id[1],
+                        fav=tweet$favorite_count[1],
+                        rt=tweet$retweet_count[1],
+                        resp=tweet$reply_count[1],
+                        responseto=tweet$reply_to_status_id[1])
+  )
+  cat('\ndone\n\n')
+}
+
+#check
+docs_get(conn=x,
+         index="tweets",
+         id=483)
+
+
+```
